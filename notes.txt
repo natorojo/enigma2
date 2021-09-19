@@ -1,0 +1,16 @@
+Encoding Definition:
+- Cog order (eg 567)
+- Code word (eg ZZZ)
+- Step length (ie the number of letters to encode before jumping to the next definition)
+
+Simple UI
+- Input textarea for coding def as new line seperated triples
+
+
+Requires Clarity:
+- When changing arrangments of cogs do we:
+	- start from the first cog when reading out
+	- keep the output cog index the same when toggling between
+	- should this be configurable? 
+	- simply move outputCogIdx where inside the first loop or outside the first 
+	loop :)

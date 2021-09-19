@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Enigma II</title>
+
+<style type="text/css">
+
+* {
+	font-family: sans-serif;
+	font-weight: 100;
+}
+
+strong {
+	font-weight: 400;
+}
+
+#container {
+	width: 400px;
+	max-width: 100%;
+	margin:auto;
+	text-align: center;
+}
+
+textarea{
+	padding: 4px;
+	min-width: 100%;
+	border-radius: 8px;
+	min-height: 80px;
+	margin: 8px auto;
+	display: block;
+}
+
+#configInstructions {
+	text-align: left;
+	margin: 8px 0;
+}
+
+#configInput {
+	text-align: center;
+	font-family: monospace;
+	text-transform: uppercase;
+}
+
+#configError {
+	color: red;
+	margin-bottom: 8px;
+}
+
+#buttons {
+	margin: 8px auto;
+}
+
+button {
+	background: transparent;
+	padding: 8px 16px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+</style>
+
+</head>
+<body>
+
+<div id="container">
+	<h1>Enigma II</h1>
+	<div><strong>Machine Config</strong></div>
+	<textarea id="configInput" placeholder="eg: ZIG 657 3"></textarea>
+	<div id="configError"></div>
+	<div><strong>Message</strong></div>
+	<textarea id="msgInput"></textarea>
+	<div id="buttons">
+		<button id="encodeMessage">Encode</button>
+		<button id="decodeMessage">Decode</button>
+	</div>
+	<div>output:</div>
+	<div id="output"></div>
+	<br>
+	<br>
+	<hr>
+	<div>Config format</div>
+	<div>
+		[Keyword] [Gear Order] [Num Steps]
+		<br>
+		...
+		<br>
+		[Keyword] [Gear Order] [Num Steps]
+	</div>
+	<div id="configInstructions">
+		<small>
+			Num steps specifies how many letters/steps to perform with that configuration before switching to the next configuration.
+			Set num steps to * (asterisk) if there is only one code word.
+		</small>
+	</div>
+</div>
+
+<script type="text/javascript">
+
+const mod = (n,m)=> {
+	const remain = n % m;
+	return Math.floor(remain >= 0 ? remain : remain + m)
+}
+
+class Machine {
+
+	configs = []
+
+	cogs = {
+		5: ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'],
+		6: ['A','C','E','D','F','H','G','I','K','J','L','N','M','O','Q','P','R','T','S','U','W','V','X','Z','Y','B'],
+		7: ['A','Z','Y','X','W','V','U','T','S','R','Q','P','O','N','M','L','K','J','I','H','G','F','E','D','C','B']
+	}
+
+	constructor(){
+		//build maps from letter to idx
+		this.cogsLetterToIdx = {
+			5:{},
+			6:{},
+			7:{}
+		}
+		Object.entries(this.cogs).forEach(([cog,letters])=>{
+			letters.forEach((letter,i)=>{
+				this.cogsLetterToIdx[cog][letter] = i
+			})
+		})
+	}
+
+	encodeMessage = msg => {
+		if(this.configs.length === 0) return 'No configs set...'
+		//pointer to idx of letter getting encoded
+		let lIdx = 0
+		const encoding = []
+		while(lIdx < msg.length){
+			for(let configIdx = 0; configIdx < this.configs.length; configIdx++){
+				if(lIdx == msg.length) break
+				const config = this.configs[configIdx]
+				const cogOrder = config.cogOrder
+				const codeWord = config.codeWord
+				const numSteps = config.numSteps
+				//initialize pointers (simulates setting up cogs) 
+				const pointers = cogOrder.map(
+					(cog,i) => this.cogsLetterToIdx[cog][codeWord.charAt(i)]
+				)
+				//set up some vars to use while looping below
+				const inputCog = cogOrder[cogOrder.length - 1]
+				//will toggle between 0 & 1
+				let outputCogIdx = 0
+				for(let step = 0; step < numSteps; step ++){
+					if(lIdx == msg.length) break
+					//get input letter
+					const l = msg.charAt(lIdx)
+					//get index of input letter on the input cog
+					const l_input_idx = this.cogsLetterToIdx[inputCog][l]
+					//simulate rotating input cog
+					const rotation = l_input_idx - pointers[2]
+					//apply rotation to pointers
+					pointers[0] = mod(pointers[0]+rotation,26)
+					pointers[1] = mod(pointers[1]-rotation,26)
+					pointers[2] = mod(pointers[2]+rotation,26)
+					const rotationResult = pointers.map(
+						(p,i)=>(this.cogs[cogOrder[i]][p])
+					)
+					encoding.push(rotationResult[outputCogIdx])
+					outputCogIdx ^= 1
+					lIdx++
+				}
+			}
+		}
+		return encoding.join('')
+	}
+
+	decodeMessage = msg => {
+		if(this.configs.length === 0) return 'No configs set...'
+		//pointer to idx of letter getting encoded
+		let lIdx = 0
+		const decoding = []
+		while(lIdx < msg.length){
+			for(let configIdx = 0; configIdx < this.configs.length; configIdx++){
+				if(lIdx == msg.length) break
+				const config = this.configs[configIdx]
+				const cogOrder = config.cogOrder
+				const codeWord = config.codeWord
+				const numSteps = config.numSteps
+				//initialize pointers (simulates setting up cogs) 
+				const pointers = cogOrder.map(
+					(cog,i) => this.cogsLetterToIdx[cog][codeWord.charAt(i)]
+				)
+				//will toggle between 0 & 1
+				let inputCogIdx = 0
+				for(let step = 0; step < numSteps; step ++){
+					if(lIdx == msg.length) break
+					//get input letter
+					const l = msg.charAt(lIdx)
+					//get index of input letter on the input cog
+					const l_input_idx = this.cogsLetterToIdx[cogOrder[inputCogIdx]][l]
+					//simulate rotating input cog
+					const rotation = pointers[inputCogIdx] - l_input_idx 
+					//apply rotation to pointers
+					//note since we are toggling back and forth
+					//between cogs we need to apply the rotation
+					//correctly depending on the input cog
+					const sign = inputCogIdx ? 1 : -1
+					pointers[0] = mod(pointers[0]+rotation*sign,26)
+					pointers[1] = mod(pointers[1]-rotation*sign,26)
+					pointers[2] = mod(pointers[2]+rotation*sign,26)
+					const rotationResult = pointers.map(
+						(p,i)=>(this.cogs[cogOrder[i]][p])
+					)
+					//console.log(rotationResult,pointers,rotation)
+					decoding.push(rotationResult[2])
+					inputCogIdx ^= 1
+					lIdx++
+				}
+			}
+		}
+		return decoding.join('')
+	}
+
+}
+
+const m = new Machine()
+
+configInput.oninput = ()=>{
+	try{
+		const input = configInput.value
+		m.configs = (
+			input.split(/\r?\n/)
+				.map(line=>(
+					line.split(' ')
+				)).map(line=>{
+					if(line.length !== 3) throw 'invalid config'
+					const codeWord = line[0].toUpperCase()
+					const cogOrder = line[1].split('').map(s=>parseInt(s))
+					//allows for using the same config over the whole string
+					const numSteps = line[2] === '*' ? Infinity : parseInt(line[2])
+					if(codeWord.length !== 3) throw 'invalid config'
+					if(cogOrder.length !== 3) throw 'invalid config'
+					if(isNaN(numSteps)) throw 'invalid config'
+					return {codeWord,cogOrder,numSteps}
+				})
+		)
+		configError.innerText = ''
+	}catch{
+		configError.innerText = 'invalid config'
+	}
+	
+}
+
+encodeMessage.onclick = ()=>{
+	output.innerText = m.encodeMessage(msgInput.value.toUpperCase())
+}
+
+decodeMessage.onclick = ()=>{
+	output.innerText = m.decodeMessage(msgInput.value.toUpperCase())
+}
+
+</script>
+</body>
+</html>
