@@ -8,6 +8,7 @@ Simple UI
 
 
 Requires Clarity:
+- https://natorojo.github.io/enigma2/index.html
 - When changing arrangments of cogs do we:
 	- start from the first cog when reading out
 	- keep the output cog index the same when toggling between
