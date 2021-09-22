@@ -185,6 +185,8 @@ class Machine {
 		//pointer to idx of letter getting encoded
 		let lIdx = 0
 		const decoding = []
+		//will toggle between 0 & 1
+		let inputCogIdx = 0
 		while(lIdx < msg.length){
 			for(let configIdx = 0; configIdx < this.configs.length; configIdx++){
 				if(lIdx == msg.length) break
@@ -196,8 +198,7 @@ class Machine {
 				const pointers = cogOrder.map(
 					(cog,i) => this.cogsLetterToIdx[cog][codeWord.charAt(i)]
 				)
-				//will toggle between 0 & 1
-				let inputCogIdx = 0
+				
 				for(let step = 0; step < numSteps; step ++){
 					if(lIdx == msg.length) break
 					//get input letter
