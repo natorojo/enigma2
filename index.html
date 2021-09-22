@@ -139,6 +139,8 @@ class Machine {
 		if(this.configs.length === 0) return 'No configs set...'
 		//pointer to idx of letter getting encoded
 		let lIdx = 0
+		//will toggle between 0 & 1
+		let outputCogIdx = 0
 		const encoding = []
 		while(lIdx < msg.length){
 			for(let configIdx = 0; configIdx < this.configs.length; configIdx++){
@@ -153,8 +155,7 @@ class Machine {
 				)
 				//set up some vars to use while looping below
 				const inputCog = cogOrder[cogOrder.length - 1]
-				//will toggle between 0 & 1
-				let outputCogIdx = 0
+				
 				for(let step = 0; step < numSteps; step ++){
 					if(lIdx == msg.length) break
 					//get input letter
